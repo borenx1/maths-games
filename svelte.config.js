@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-auto';
+import adapter from '@sveltejs/adapter-netlify';
 import preprocess from 'svelte-preprocess';
 
 /** @type {import('@sveltejs/kit').Config} */
@@ -8,6 +8,8 @@ const config = {
 	preprocess: preprocess(),
 
 	kit: {
+		// Use Netlify adapter manually to fix Netlify build error
+		// Use adapter-auto instead when the bug is fixed
 		adapter: adapter()
 	}
 };

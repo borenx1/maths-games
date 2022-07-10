@@ -17,14 +17,25 @@
   let showTimer = false;
   // Game state variables.
   let isPlaying = false;
+  let isFinished = false;
   let game: TimesTableGame;
   let stage = 1;
   let factor1 = 0;
   let factor2 = 0;
-  let previousState: GameState | undefined;
+  let history: GameState[] = [];
+  let numCorrectAnswers = 0;
   let timer = 0;
   // Player input.
   let playerInput = '';
+
+  $: previousState = history.length ? history[history.length - 1] : undefined;
+  $: scorePercentage = (() => {
+    const score = isFinished ? (numCorrectAnswers / stage) : (numCorrectAnswers / (stage - 1));
+    return score.toLocaleString(undefined, {
+      style: 'percent',
+      maximumFractionDigits: 2,
+    });
+  })();
 
   /**
    * Sync the game state of the Game class with this component.
@@ -37,7 +48,9 @@
     stage = gameState.stage;
     factor1 = gameState.factor1;
     factor2 = gameState.factor2;
-    previousState = game.getPreviousState();
+    history = game.getHistory();
+    numCorrectAnswers = game.getNumCorrectAnswers();
+    isFinished = game.isFinished();
   }
 
   function resetGameState() {
@@ -67,12 +80,12 @@
     }
 
     const isCorrect = game.answerQuestion(playerInputNumber);
+    syncGameState();
+
     if (game.isFinished()) {
-      // TODO: Show end screen
       return;
     }
 
-    syncGameState();
     playerInput = '';
     answerInput.focus();
   }
@@ -123,30 +136,39 @@
     </button>
   </div>
   <!-- Main output -->
-  {#if isPlaying}
+  {#if isPlaying && !isFinished}
     <div class="flex flex-col p-1">
       {#if showTimer}
         <div>
           Time: {timer} {timer === 1 ? 'second' : 'seconds'}
         </div>
       {/if}
-      <div class="text-center">
-        {#if maxQuestions > 0}
-          Question {stage} / {maxQuestions}
-        {:else}
-          Question {stage}
-        {/if}
+      <div class="grid grid-cols-2 gap-4">
+        <div class="text-start">
+          {#if maxQuestions > 0}
+            Question {stage} / {maxQuestions}
+          {:else}
+            Question {stage}
+          {/if}
+        </div>
+        <div class="font-mono text-end">
+          {#if stage > 1}
+            Score: {numCorrectAnswers} / {stage - 1} ({scorePercentage})
+          {/if}
+        </div>
       </div>
-      <div class="text-7xl text-center px-4 py-8">
+      <!-- Current question -->
+      <div class="font-mono text-7xl text-center px-4 py-8">
         {factor1} &times; {factor2}
       </div>
+      <!-- Feedback -->
       <div class="text-center">
         {#if previousState === undefined}
           Have fun!
         {:else if previousState.answer === previousState.playerAnswer}
-          Your previous answer was correct!
+          <span class="text-green-700">Your previous answer was correct!</span>
         {:else}
-          Your previous answer was wrong! It was {previousState.answer}.
+          <span class="text-red-700">Your previous answer was wrong! It was {previousState.answer}.</span>
         {/if}
       </div>
       <div class="flex w-full px-2 py-2">
@@ -163,6 +185,21 @@
         class="w-3/4 sm:w-1/2 bg-slate-100 border hover:bg-slate-200 active:bg-slate-300 border-slate-700 py-2 px-4 mx-auto"
       >
         <span class="font-mono text-xl">Enter</span>
+      </button>
+    </div>
+  {:else if isPlaying}
+    <div class="text-center px-4 py-2">
+      <h3 class="text-xl">
+        You answered {numCorrectAnswers} out of {stage} questions correctly!
+      </h3>
+      <span>You got {scorePercentage} of questions correct.</span>
+    </div>
+    <div class="flex justify-center items-center py-12">
+      <button
+        on:click={startGame}
+        class="bg-sky-100 hover:bg-sky-200 active:bg-sky-300 border border-sky-700 rounded-full p-4 w-1/4 aspect-square"
+      >
+        <span class="text-3xl font-bold">Play Again</span>
       </button>
     </div>
   {:else}

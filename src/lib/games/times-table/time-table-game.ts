@@ -20,6 +20,7 @@ export class TimesTableGame {
     factor2: 0,
     answer: 0,
   };
+  private isGameOver = false;
   /** The history of questions and answers */
   private history: GameState[] = [];
   /** The number of correct player answers so far. */
@@ -37,7 +38,11 @@ export class TimesTableGame {
     return this.state;
   }
 
-  getPreviousState(): GameState|undefined {
+  getHistory() {
+    return this.history;
+  }
+
+  getPreviousState(): GameState | undefined {
     if (this.history.length) {
       return this.history[this.history.length - 1];
     }
@@ -55,6 +60,7 @@ export class TimesTableGame {
       factor2: 0,
       answer: 0,
     };
+    this.isGameOver = false;
     this.history = [];
     this.numCorrectAnswers = 0;
     this.nextQuestion();
@@ -65,15 +71,18 @@ export class TimesTableGame {
    * and advances to the next game stage.
    */
   nextQuestion() {
-    this.state = {
-      ...this.state,
-      stage: this.state.stage + 1,
-    };
-    if (!this.isFinished()) {
-      this.state.factor1 = randomInt(this.minFactor, this.maxFactor);
-      this.state.factor2 = randomInt(this.minFactor, this.maxFactor);
-      this.state.answer = Math.floor(this.state.factor1 * this.state.factor2);
+    if (this.isGameOver) {
+      return;
     }
+
+    const factor1 = randomInt(this.minFactor, this.maxFactor);
+    const factor2 = randomInt(this.minFactor, this.maxFactor);
+    this.state = {
+      stage: this.state.stage + 1,
+      factor1,
+      factor2,
+      answer: Math.floor(factor1 * factor2),
+    };
   }
 
   /**
@@ -83,7 +92,7 @@ export class TimesTableGame {
    * @returns {boolean} `true` if the answer is correct.
    */
   answerQuestion(answer: number) {
-    if (this.isFinished()) {
+    if (this.isGameOver) {
       return false;
     }
 
@@ -94,6 +103,10 @@ export class TimesTableGame {
     }
 
     this.history.push({ ...this.state });
+    // End if game if the max questions is reached.
+    if (this.size > 0 && this.state.stage >= this.size) {
+      this.isGameOver = true;
+    }
     this.nextQuestion();
 
     return isCorrect;
@@ -104,6 +117,6 @@ export class TimesTableGame {
    * @returns {boolean} `true` if the progress > the game size and the size is not 0 (unlimited).
    */
   isFinished() {
-    return this.size > 0 && this.state.stage > this.size;
+    return this.isGameOver;
   }
 }

@@ -5,7 +5,8 @@
 </script>
 
 <script lang="ts">
-  import { tick } from 'svelte';
+  import { tick, onDestroy } from 'svelte';
+  import { formatTimeMinuteSecond } from '$lib/util/string';
   import { TimesTableGame } from './time-table-game';
   import type { GameState } from './time-table-game';
 
@@ -24,7 +25,11 @@
   let factor2 = 0;
   let history: GameState[] = [];
   let numCorrectAnswers = 0;
+  // Timer variables.
+  let startTime = 0;
+  let endTime = 0;
   let timer = 0;
+  let interval: NodeJS.Timer;
   // Player input.
   let playerInput = '';
 
@@ -36,6 +41,9 @@
       maximumFractionDigits: 2,
     });
   })();
+  $: timerFormatted = formatTimeMinuteSecond(timer);
+
+  onDestroy(() => clearInterval(interval));
 
   /**
    * Sync the game state of the Game class with this component.
@@ -56,8 +64,9 @@
   function resetGameState() {
     game = new TimesTableGame(level, minFactor, maxQuestions);
     syncGameState();
-    timer = 0;
     playerInput = '';
+    clearInterval(interval);
+    timer = 0;
   }
 
   async function startGame() {
@@ -65,9 +74,14 @@
     isPlaying = true;
     await tick();
     answerInput.focus();
+    startTime = Date.now();
+    interval = setInterval(() => {
+      timer++;
+    }, 1000);
   }
 
   function restartGame() {
+    // TODO: Resets game state twice if restart then start.
     resetGameState();
     isPlaying = false;
   }
@@ -79,10 +93,11 @@
       return;
     }
 
-    const isCorrect = game.answerQuestion(playerInputNumber);
+    game.answerQuestion(playerInputNumber);
     syncGameState();
 
     if (game.isFinished()) {
+      endTime = Date.now();
       return;
     }
 
@@ -135,12 +150,12 @@
       Restart Game
     </button>
   </div>
-  <!-- Main output -->
+  <!-- Main game screen -->
   {#if isPlaying && !isFinished}
     <div class="flex flex-col p-1">
       {#if showTimer}
         <div>
-          Time: {timer} {timer === 1 ? 'second' : 'seconds'}
+          Time: {timerFormatted}
         </div>
       {/if}
       <div class="grid grid-cols-2 gap-4">
@@ -187,12 +202,14 @@
         <span class="font-mono text-xl">Enter</span>
       </button>
     </div>
+  <!-- Game over screen -->
   {:else if isPlaying}
     <div class="text-center px-4 py-2">
       <h3 class="text-xl">
         You answered {numCorrectAnswers} out of {stage} questions correctly!
       </h3>
-      <span>You got {scorePercentage} of questions correct.</span>
+      <p>You got {scorePercentage} of questions correct.</p>
+      <p>Time taken: {formatTimeMinuteSecond((endTime - startTime) / 1000)}.</p>
     </div>
     <div class="flex justify-center items-center py-12">
       <button
@@ -202,6 +219,7 @@
         <span class="text-3xl font-bold">Play Again</span>
       </button>
     </div>
+  <!-- Start game screen -->
   {:else}
     <div class="flex justify-center items-center py-12">
       <button

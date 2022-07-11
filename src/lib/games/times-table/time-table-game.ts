@@ -1,4 +1,4 @@
-import { randomInt } from '$lib/games/util';
+import { randomInt } from '$lib/util/maths';
 
 export interface GameState {
   stage: number;

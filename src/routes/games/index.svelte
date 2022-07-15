@@ -9,7 +9,7 @@
     <li>
       <a
         href="/games/times-table"
-        class="block border border-sky-700 rounded-xl text-lg hover:bg-sky-100"
+        class="block border border-sky-600 dark:border-sky-400 hover:bg-sky-200 dark:hover:bg-sky-800 rounded-xl text-lg py-2"
       >
         Times Table
       </a>
@@ -17,7 +17,7 @@
     <li>
       <a
         href="/games/times-table-single"
-        class="block border border-sky-700 rounded-xl text-lg hover:bg-sky-100"
+        class="block border border-sky-600 dark:border-sky-400 hover:bg-sky-200 dark:hover:bg-sky-800 rounded-xl text-lg py-2"
       >
         Times Table (Single Row)
       </a>
